@@ -334,6 +334,12 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   .tb-acc{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:4px}
   .tb-oz{display:flex;gap:6px;align-items:center}
   .tb-oz .in{width:74px;padding:9px 8px;font-size:14px}
+  .mixbox{margin:2px 0 4px}
+  .mix-btn{width:100%;border:2px dashed var(--line);background:none;color:var(--primary);font:inherit;font-weight:800;font-size:14px;padding:10px;border-radius:12px}
+  .mix-h{display:flex;justify-content:space-between;align-items:baseline;margin:2px 2px 6px;font-size:14px}
+  .mix-h small{color:var(--muted);font-weight:700;font-size:12px}
+  .chips.mixs{max-height:150px;overflow-y:auto;margin-bottom:4px}
+  .chips.mixs .chip{padding:7px 11px;font-size:13px}
   .link-btn{background:none;border:none;color:var(--primary);font:inherit;font-weight:800;font-size:13px;padding:6px 0 2px;text-align:left}
   .gform .monto-in{font-size:26px;text-align:center}
   .gform .two{margin-top:2px}
@@ -389,6 +395,10 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   .mesas-bar h2{margin:0;margin-right:auto}
   .leyenda{display:flex;gap:14px;font-size:12px;font-weight:700;color:var(--muted);margin:0 2px 10px}
   .leyenda i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+  .plano-box{position:relative}
+  .credito{position:absolute;right:14px;bottom:10px;font-size:12px;font-weight:600;color:var(--muted);opacity:.75;pointer-events:none;white-space:nowrap;letter-spacing:.2px}
+  .credito b{font-weight:800;color:var(--ink);opacity:.85}
+  @media (max-width:560px){ .credito{font-size:10px;right:10px;bottom:7px} }
   .plano-wrap{overflow:auto;border:1px solid var(--line);border-radius:16px;background:var(--surface);-webkit-overflow-scrolling:touch}
   .plano{position:relative;transform-origin:0 0;
     background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:40px 40px}
@@ -1043,6 +1053,7 @@ function costoItem(it){
   return v && v.costo != null ? v.costo : null;
 }
 const margenTxt = (precio, costo) => costo == null || !precio ? 'sin costo' : 'margen ' + Math.round((precio - costo) / precio * 100) + '%';
+const numU = u => String(Math.round(u * 10) / 10).replace('.', ',');
 const varTxt = it => it.variante || (it.oz != null ? it.oz + ' oz' : '');
 const nombreItem = it => { const v = varTxt(it); return esc(it.nombre) + (v && v !== 'Unidad' ? ' · ' + esc(v) : ''); };
 const tamLabel = t => t.oz + ' oz' + (t.nombre ? ' · ' + t.nombre : '');
@@ -1166,7 +1177,7 @@ function renderCaja(){
     const precioTxt = !vs.length ? (esPorTamano(p.linea) ? 'Sin tamaños' : 'Sin precio')
       : vs.length === 1 ? fmt(vs[0].precio) + (esPorTamano(p.linea) ? ' · ' + vs[0].etiqueta : '')
       : 'Desde ' + fmt(Math.min(...vs.map(v => v.precio)));
-    const q = Object.entries(S.pedido).filter(([k]) => k.startsWith(p.id + '|')).reduce((a, [, n]) => a + n, 0);
+    const q = Object.entries(S.pedido).filter(([k]) => idsDe(k.split('|')[0]).includes(p.id)).reduce((a, [, n]) => a + n, 0);
     const st = !esPorTamano(p.linea) && vs.length === 1 ? stockTxt(vs[0].id) : null;
     return `<button class="prod" style="--c:${p.color}" data-add="${p.id}">
       ${q ? `<span class="q">${q}</span>` : ''}
@@ -1202,12 +1213,21 @@ function elegirVariante(pid, alAgregar = agregar, cantDe = (a, b) => S.pedido[a 
   const p = S.productos.find(x => x.id === pid); if (!p) return;
   const vs = variantesDe(p), porTam = esPorTamano(p.linea);
   if (!vs.length) return toast(porTam ? 'Agrega tamaños de ' + nombreLinea(p.linea).toLowerCase() + ' en Productos' : 'Ponle precio a ' + p.nombre + ' en Productos');
-  if (vs.length === 1){ const sin = alAgregar(pid, vs[0].id); toast(sin ? 'Ojo: ' + p.nombre + ' aparece agotado en inventario' : '+1 ' + p.nombre); return; }
-  openSheet(`
-    <h3>${esc(p.nombre)}</h3>
-    <p class="sub">${esc(unoDe(p.linea))} · elige ${porTam ? 'el tamaño' : 'la presentación'}</p>
+  const otros = porTam ? S.productos.filter(x => x.activo && x.linea === p.linea && x.id !== pid) : [];
+  if (vs.length === 1 && !otros.length){ const sin = alAgregar(pid, vs[0].id); toast(sin ? 'Ojo: ' + p.nombre + ' aparece agotado en inventario' : '+1 ' + p.nombre); return; }
+  let mix = [], verMix = false;
+  const pk = () => [pid, ...mix].join('+');
+  const nombres = () => [p, ...mix.map(i => S.productos.find(x => x.id === i))].map(x => x.nombre).join(' + ');
+  const pintar = () => { const k = pk(); openSheet(`
+    <h3>${esc(nombres())}</h3>
+    <p class="sub">${esc(unoDe(p.linea))}${mix.length ? ' · mezcla de ' + (mix.length + 1) + ' sabores' : ''} · elige ${porTam ? 'el tamaño' : 'la presentación'}</p>
+    ${otros.length ? `<div class="mixbox">
+      ${mix.length || verMix ? `<div class="mix-h"><b>Mezclar con</b><small>${mix.length + 1}/${MAX_MEZCLA} sabores · mismo precio</small></div>
+        <div class="chips wrap mixs">${otros.map(o => `<button class="chip ${mix.includes(o.id) ? 'on' : ''}" data-mx="${o.id}">${mix.includes(o.id) ? '✓ ' : ''}${esc(o.nombre)}</button>`).join('')}</div>`
+      : `<button class="mix-btn" data-mxopen="1">+ Mezclar con otro sabor</button>`}
+    </div>` : ''}
     ${(() => {
-      const boton = v => { const q = cantDe(pid, v.id), st = stockTxt(v.id);
+      const boton = v => { const q = cantDe(k, v.id), st = stockTxt(v.id);
         return `<button class="tam-btn" data-t="${v.id}">
         ${q ? `<span class="q">${q}</span>` : ''}
         <div class="o ${porTam ? '' : 'txt'}">${esc(v.grande)}${v.unidad ? `<small>${v.unidad}</small>` : ''}</div>
@@ -1219,21 +1239,41 @@ function elegirVariante(pid, alAgregar = agregar, cantDe = (a, b) => S.pedido[a 
       const grupos = [];
       vs.forEach(v => { let g = grupos.find(x => tipoKey(x.tipo) === tipoKey(v.tipo)); if (!g) grupos.push(g = { tipo: v.tipo, vs: [] }); g.vs.push(v); });
       return grupos.map(g => `<div class="tipo-h">${esc(g.tipo || 'Sin tipo')}</div><div class="tam-grid tipos">${g.vs.map(boton).join('')}</div>`).join('');
-    })()}`);
+    })()}`); };
+  pintar();
   $('#sheet').onclick = e => {
+    if (e.target.closest('[data-mxopen]')){ verMix = true; return pintar(); }
+    const mx = e.target.closest('[data-mx]');
+    if (mx){ const i = mx.dataset.mx;
+      if (mix.includes(i)) mix = mix.filter(x => x !== i);
+      else if (mix.length + 1 >= MAX_MEZCLA) return toast('Máximo ' + MAX_MEZCLA + ' sabores por vaso');
+      else mix = [...mix, i];
+      const y = $('#sheet').scrollTop; pintar(); $('#sheet').scrollTop = y; return; }
     const b = e.target.closest('[data-t]'); if (!b) return;
-    const v = vs.find(x => x.id === b.dataset.t);
-    const sin = alAgregar(pid, b.dataset.t); closeSheet();
-    toast(sin ? 'Ojo: ' + p.nombre + ' ' + v.etiqueta + ' aparece agotado en inventario' : '+1 ' + p.nombre + ' ' + v.etiqueta);
+    const v = vs.find(x => x.id === b.dataset.t), nm = nombres();
+    const sin = alAgregar(pk(), b.dataset.t); closeSheet();
+    toast(sin ? 'Ojo: ' + nm + ' ' + v.etiqueta + ' aparece agotado en inventario' : '+1 ' + nm + ' ' + v.etiqueta);
   };
 }
 
+/* Mezclas de sabores: la clave del sabor puede ser "idA+idB(+idC)". El vaso cuesta lo mismo que uno de un sabor;
+   el primer sabor queda como productoId (compatibilidad) y la lista completa va en "mezcla". */
+const MAX_MEZCLA = 3;
+const idsDe = pk => String(pk).split('+');
+const claveSabor = it => it.mezcla && it.mezcla.length > 1 ? it.mezcla.join('+') : it.productoId;
+function itemDeSabor(pk, vid, cantidad){
+  const ids = idsDe(pk), ps = ids.map(i => S.productos.find(x => x.id === i));
+  if (!ps.length || ps.some(x => !x)) return null;
+  const v = variantesDe(ps[0]).find(x => x.id === vid); if (!v) return null;
+  const it = { productoId: ps[0].id, nombre: ps.map(x => x.nombre).join(' + '), linea: ps[0].linea, tamanoId: vid, oz: v.oz, variante: v.etiqueta, precio: v.precio, costo: v.costo ?? null, cantidad };
+  if (ids.length > 1) it.mezcla = ids;
+  return it;
+}
 function pedidoItems(){
   return Object.entries(S.pedido).filter(([, q]) => q > 0).map(([k, q]) => {
-    const [pid, vid] = k.split('|');
-    const p = S.productos.find(x => x.id === pid);
-    const v = variantesDe(p).find(x => x.id === vid);
-    return p && v ? { key: k, productoId: pid, nombre: p.nombre, linea: p.linea, tamanoId: vid, oz: v.oz, variante: v.etiqueta, precio: v.precio, costo: v.costo ?? null, cantidad: q } : null;
+    const [pk, vid] = k.split('|');
+    const it = itemDeSabor(pk, vid, q);
+    return it ? { key: k, ...it } : null;
   }).filter(Boolean);
 }
 function renderOrderbar(){
@@ -1394,9 +1434,9 @@ function renderMesas(){
   const esc_ = Math.min(1, Math.max(0.62, (cw - 2) / W));
   W = Math.max(W, Math.floor((cw - 2) / esc_));   // el plano ocupa todo el ancho disponible
   S._esc = esc_;
-  $('#mesasBody').innerHTML = `<div class="plano-wrap ${S.caja || S.editPlano ? '' : 'bloqueado'}"><div style="width:${W * esc_}px;height:${H * esc_}px;position:relative;overflow:hidden">
+  $('#mesasBody').innerHTML = `<div class="plano-box"><div class="plano-wrap ${S.caja || S.editPlano ? '' : 'bloqueado'}"><div style="width:${W * esc_}px;height:${H * esc_}px;position:relative;overflow:hidden">
       <div class="plano ${S.editPlano ? 'editando' : ''}" style="width:${W}px;height:${H}px;transform:scale(${esc_})">${lista.map(m => tarjetaMesa(m, true)).join('')}</div>
-    </div></div>
+    </div></div><div class="credito">Created by computer engineer <b>Alejandro Arbelaez</b></div></div>
     ${S.editPlano ? '' : '<p class="mesa-hint">Toca una mesa para ver su cuenta, agregar productos o cobrar.</p>'}`;
 }
 window.addEventListener('resize', () => { if (vista === 'mesas') renderMesas(); });
@@ -1469,7 +1509,7 @@ async function actualizarMesa(id, fn){
 }
 function juntarItems(dest, items){
   items.forEach(it => {
-    const x = dest.find(d => d.productoId === it.productoId && d.tamanoId === it.tamanoId && d.precio === it.precio);
+    const x = dest.find(d => claveSabor(d) === claveSabor(it) && d.tamanoId === it.tamanoId && d.precio === it.precio);
     if (x) x.cantidad += it.cantidad; else dest.push({ ...it });
   });
   return dest;
@@ -1505,7 +1545,7 @@ function entrarMesa(id){
   if (!LINEAS[S.linea] || LINEAS[S.linea].activo === false) S.linea = lineasActivas()[0]?.id || '';
   irA('mesa');
 }
-const cantEnMesa = (m, pid, vid) => itemsMesa(m).filter(it => it.productoId === pid && (vid == null || String(it.tamanoId) === String(vid))).reduce((a, it) => a + it.cantidad, 0);
+const cantEnMesa = (m, pid, vid) => itemsMesa(m).filter(it => vid == null ? idsDe(claveSabor(it)).includes(pid) : claveSabor(it) === pid && String(it.tamanoId) === String(vid)).reduce((a, it) => a + it.cantidad, 0);
 
 function renderMesaView(){
   const m = S.mesas.find(x => x.id === S.mesaAbierta);
@@ -1546,7 +1586,7 @@ function renderMesaView(){
 function cuentaHtml(m, enSheet){
   const items = itemsMesa(m), oc = items.length > 0;
   return `${enSheet ? '' : `<h3>Cuenta</h3><p class="sub">${m.sillas} sillas · ${m.personas || 0} ${m.personas === 1 ? 'persona' : 'personas'}</p>`}
-    ${oc ? items.map(it => { const k = it.productoId + '|' + it.tamanoId; return `
+    ${oc ? items.map(it => { const k = claveSabor(it) + '|' + it.tamanoId; return `
       <div class="line">
         <div class="nm">${nombreItem(it)}<small>${esc(unoDe(it.linea))} · ${fmt(it.precio)}</small></div>
         <div class="qty">
@@ -1564,11 +1604,9 @@ function cuentaHtml(m, enSheet){
 // Tocar un producto lo suma a la cuenta de una vez. Se guarda en la nube un instante después
 // (si tocan varios seguidos, se guardan juntos).
 function sumarAMesa(id, pid, vid){
-  const m = S.mesas.find(x => x.id === id), p = S.productos.find(x => x.id === pid);
-  const v = variantesDe(p).find(x => x.id === vid);
-  if (!m || !p || !v) return false;
+  const m = S.mesas.find(x => x.id === id), item = itemDeSabor(pid, vid, 1);
+  if (!m || !item) return false;
   const st = stockTxt(vid);
-  const item = { productoId: pid, nombre: p.nombre, linea: p.linea, tamanoId: vid, oz: v.oz, variante: v.etiqueta, precio: v.precio, costo: v.costo ?? null, cantidad: 1 };
   pendMesa[id] = juntarItems(pendMesa[id] || [], [item]);
   if (navigator.vibrate) navigator.vibrate(15);
   _stock = null; renderMesaView();
@@ -1616,7 +1654,7 @@ async function accionCuenta(e){
     if (d > 0) return sumarAMesa(id, pid, vid);
     await guardarMesaYa(id);
     await actualizarMesa(id, x => {
-      const it = (x.items || []).find(i => i.productoId === pid && String(i.tamanoId) === vid); if (!it) return;
+      const it = (x.items || []).find(i => claveSabor(i) === pid && String(i.tamanoId) === vid); if (!it) return;
       it.cantidad += d;
       x.items = x.items.filter(i => i.cantidad > 0);
       if (!x.items.length) limpiarMesa(x);
@@ -2024,8 +2062,8 @@ function calcular(){
   const incluye = l => filtro === 'todos' || l === filtro;
   const vRango = S.ventas.filter(v => !ini || new Date(v.fecha) >= ini);
   const porLinea = {}, prods = {}, vars = {};
-  const tiposV = {};
-  const asegurar = l => { if (!porLinea[l]){ porLinea[l] = { u: 0, i: 0 }; prods[l] = new Map(); vars[l] = new Map(); tiposV[l] = new Map();
+  const tiposV = {}, mezV = {};
+  const asegurar = l => { if (!porLinea[l]){ porLinea[l] = { u: 0, i: 0 }; prods[l] = new Map(); vars[l] = new Map(); tiposV[l] = new Map(); mezV[l] = new Map();
     if (esPorTamano(l) && usaTipos(l)) gruposTipo(l).forEach(g => tiposV[l].set(tipoKey(g.tipo), { label: g.tipo || 'Sin tipo', u: 0, i: 0 })); } };
   const tipoDeItem = it => { const t = (S.tamanos[it.linea] || []).find(x => x.id === it.tamanoId); return t ? String(t.nombre || '').trim() : ''; };
   // Todos los productos y tamaños activos aparecen, aunque tengan 0 ventas
@@ -2050,9 +2088,16 @@ function calcular(){
       porDow[f.getDay()] += sub;
       porDia.set(k, (porDia.get(k) || 0) + sub);
       Object.entries(pagosDe(v)).forEach(([m, x]) => { pagos[m] = (pagos[m] || 0) + (v.total ? sub * x / v.total : 0); });
-      if (!prods[l].has(it.productoId)){ const a = S.productos.find(p => p.id === it.productoId); prods[l].set(it.productoId, { nombre: a ? a.nombre : it.nombre, u: 0, i: 0, g: 0 }); }
-      const r = prods[l].get(it.productoId), cu = costoItem(it); r.u += it.cantidad; r.i += sub;
-      if (cu == null) r.sinCosto = true; else r.g += (it.precio - cu) * it.cantidad;
+      // Una mezcla cuenta como una parte de vaso para cada sabor (2 sabores = medio vaso cada uno)
+      const sab = it.mezcla && it.mezcla.length > 1 ? it.mezcla : [it.productoId], fr = 1 / sab.length, cu = costoItem(it), nms = String(it.nombre).split(' + ');
+      sab.forEach((sid, j) => {
+        if (!prods[l].has(sid)){ const a = S.productos.find(p => p.id === sid); prods[l].set(sid, { nombre: a ? a.nombre : (sab.length > 1 ? nms[j] || it.nombre : it.nombre), u: 0, i: 0, g: 0 }); }
+        const r = prods[l].get(sid); r.u += it.cantidad * fr; r.i += sub * fr;
+        if (cu == null) r.sinCosto = true; else r.g += (it.precio - cu) * it.cantidad * fr;
+      });
+      if (sab.length > 1){ const mk = [...nms].sort((a, b) => a.localeCompare(b)).join(' + ');
+        if (!mezV[l].has(mk)) mezV[l].set(mk, { label: mk, u: 0, i: 0 });
+        const r3 = mezV[l].get(mk); r3.u += it.cantidad; r3.i += sub; }
       const vk = varTxt(it) || 'Sin tamaño';
       if (!vars[l].has(vk)) vars[l].set(vk, { label: vk, nombre: '', oz: it.oz ?? 999, ord: 999, u: 0, i: 0 });
       const t = vars[l].get(vk); t.u += it.cantidad; t.i += sub;
@@ -2071,15 +2116,16 @@ function calcular(){
   for (let d = new Date(desde); d <= hoy; d.setDate(d.getDate() + 1)) dias.push({ d: new Date(d), v: porDia.get(keyDia(d)) || 0 });
   const cuentaDow = new Array(7).fill(0); dias.forEach(x => cuentaDow[x.d.getDay()]++);
   const orden = (a, b) => b[S.rankBy] - a[S.rankBy] || b.i - a.i || b.u - a.u;
-  const ranking = {}, variantes = {}, tipos = {};
+  const ranking = {}, variantes = {}, tipos = {}, mezclas = {};
   Object.keys(porLinea).forEach(l => {
     ranking[l] = [...prods[l].values()].sort(orden);
     variantes[l] = [...vars[l].values()].sort(esPorTamano(l) ? (a, b) => a.ord - b.ord || a.oz - b.oz : (a, b) => b.u - a.u);
     tipos[l] = [...tiposV[l].values()];
+    mezclas[l] = [...mezV[l].values()].sort((a, b) => b.u - a.u || b.i - a.i);
   });
   // Categorías a mostrar, en su orden; también las borradas que tengan ventas en el periodo
   const ids = [...lineaIds(), ...Object.keys(porLinea).filter(l => !LINEAS[l])].filter(l => porLinea[l] && (porLinea[l].u > 0 || LINEAS[l]?.activo !== false));
-  return { filtro, pedidos, ingresos, unidades, porLinea, ranking, variantes, tipos, porHora, porDow, cuentaDow, dias, pagos, ids };
+  return { filtro, pedidos, ingresos, unidades, porLinea, ranking, variantes, tipos, mezclas, porHora, porDow, cuentaDow, dias, pagos, ids };
 }
 
 function filasBarras(rows, total, color){
@@ -2101,7 +2147,7 @@ function renderStats(){
     return;
   }
 
-  const metric = r => S.rankBy === 'u' ? r.u + (r.u === 1 ? ' unidad' : ' unidades') : S.rankBy === 'g' ? fmt(r.g) + ' de ganancia' + (r.sinCosto ? '*' : '') : fmt(r.i);
+  const metric = r => S.rankBy === 'u' ? numU(r.u) + (r.u === 1 ? ' unidad' : ' unidades') : S.rankBy === 'g' ? fmt(r.g) + ' de ganancia' + (r.sinCosto ? '*' : '') : fmt(r.i);
   const mostrarDias = D.dias.length >= 2;
   const totPagos = Object.values(D.pagos).reduce((a, b) => a + b, 0);
   const segRank = `<div class="seg"><button data-k="u" class="${S.rankBy === 'u' ? 'on' : ''}">Unid.</button><button data-k="i" class="${S.rankBy === 'i' ? 'on' : ''}">Ventas</button><button data-k="g" class="${S.rankBy === 'g' ? 'on' : ''}">Ganancia</button></div>`;
@@ -2135,6 +2181,12 @@ function renderStats(){
       <div class="card">
         <div class="card-h"><div><h3>${porTam ? 'Sabores' : 'Productos'} · ${esc(nombreLinea(l))}</h3><p class="sub">${S.rankBy === 'u' ? 'Unidades vendidas' : S.rankBy === 'g' ? 'Ganancia (venta − costo)' : 'Ingresos'} por ${porTam ? 'sabor' : 'producto'}${S.rankBy === 'g' && rk.some(r => r.sinCosto) ? ' · * sin costo configurado' : ''}</p></div>${segRank}</div>
         <div class="chartbox" style="height:${rk.length * 34 + 20}px"><canvas id="cRank-${l}"></canvas></div>
+      </div>`;
+    }
+    const mzs = (D.mezclas?.[l] || []).slice(0, 8);
+    if (mzs.length){
+      html += `<div class="card"><h3>Mezclas más pedidas · ${esc(nombreLinea(l))}</h3><p class="sub">Vasos de 2 o más sabores. En el ranking de sabores, cada mezcla cuenta como una parte de vaso para cada sabor.</p>
+        ${filasBarras(mzs.map(t => ({ titulo: esc(t.label), sub: fmt(t.i), v: t.u, der: t.u + '<small>' + (t.u === 1 ? 'vaso' : 'vasos') + '</small>' })), Math.max(...mzs.map(t => t.u), 1), col)}
       </div>`;
     }
     const tps = (D.tipos?.[l] || []);
@@ -2221,13 +2273,13 @@ function dibujarGraficas(D, lineas, mostrarDias){
   lineas.forEach(l => {
     const cv = document.getElementById('cRank-' + l); if (!cv) return;
     const rk = D.ranking[l];
-    const datos = rk.map(r => r[S.rankBy]);
+    const datos = rk.map(r => S.rankBy === 'u' ? Math.round(r.u * 10) / 10 : Math.round(r[S.rankBy]));
     const o = opcionesBase();
     o.indexAxis = 'y';
     o.layout = { padding: { right: 46 } };
     o.scales.x = { display: false, beginAtZero: true, suggestedMax: Math.max(...datos, 1) };
     o.scales.y = { grid: { display: false }, border: { display: false }, ticks: { color: css('--ink'), font: { weight: '800', size: 13 } } };
-    o.plugins.tooltip.callbacks = { label: c => { const r = rk[c.dataIndex]; return [r.u + ' unidades', 'Ventas ' + fmt(r.i), 'Ganancia ' + (r.sinCosto ? 'sin costo' : fmt(r.g))]; } };
+    o.plugins.tooltip.callbacks = { label: c => { const r = rk[c.dataIndex]; return [numU(r.u) + ' unidades', 'Ventas ' + fmt(r.i), 'Ganancia ' + (r.sinCosto ? 'sin costo' : fmt(r.g))]; } };
     charts['rank-' + l] = new Chart(cv, {
       type: 'bar',
       data: { labels: rk.map(r => r.nombre), datasets: [{ data: datos, backgroundColor: colorLinea(l), borderRadius: 4, borderSkipped: 'start', barThickness: 18 }] },
