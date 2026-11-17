@@ -3,7 +3,7 @@
    - La app (index.html): primero intenta la versión nueva; si no hay señal, usa la guardada.
    - Íconos y fuentes: se guardan la primera vez y luego salen del celular.
    - Datos de Supabase: nunca se guardan aquí, siempre van en vivo. */
-const CACHE = 'frio-intenso-v1';
+const CACHE = 'frio-intenso-v2';
 const BASE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -23,7 +23,11 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.hostname.endsWith('supabase.co') || url.hostname.endsWith('supabase.in')) return;
-  const esApp = req.mode === 'navigate' || (url.origin === location.origin && /\/(index\.html)?$/.test(url.pathname));
+  const propio = url.origin === location.origin;
+  // La carta pública (carta.html) siempre va en vivo: no se guarda ni reemplaza a la app
+  if (propio && /\/carta\.html$/.test(url.pathname)) return;
+  const esApp = propio && (req.mode === 'navigate' || /\/(index\.html)?$/.test(url.pathname));
+  if (!propio && req.mode === 'navigate') return;
   e.respondWith(esApp ? redPrimero(req) : cachePrimero(req));
 });
 

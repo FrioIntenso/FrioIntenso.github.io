@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Carta · Frío Intenso</title>
+<meta name="description" content="Carta de Frío Intenso: granizados y frappés, con los sabores disponibles hoy.">
+<meta name="theme-color" content="#0b86c9">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap">
+<style>
+/* Mismos colores de la carta impresa: azul cielo, letras blancas y azul oscuro */
+:root{
+  --sky1:#0a86c6; --sky2:#33b6dc; --navy:#123a74; --navy2:#0d2c5a;
+  --white:#ffffff; --ink:#0d2c5a; --soft:rgba(255,255,255,.16); --line:rgba(255,255,255,.35);
+  --font:"Montserrat",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html{background:var(--sky1)}
+body{margin:0;min-height:100vh;font-family:var(--font);color:var(--white);
+  background:linear-gradient(180deg,var(--sky1) 0%,#1aa0d4 45%,var(--sky2) 100%);
+  padding:env(safe-area-inset-top,0) max(16px,env(safe-area-inset-right,0)) env(safe-area-inset-bottom,0) max(16px,env(safe-area-inset-left,0));
+  -webkit-text-size-adjust:100%}
+main{max-width:540px;margin:0 auto;padding:22px 0 48px;display:flex;flex-direction:column;gap:26px}
+
+.brand{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px}
+.brand img{width:62%;max-width:250px;aspect-ratio:1;border-radius:50%;box-shadow:0 10px 30px rgba(13,44,90,.35);background:#0a86c6}
+.brand p{margin:0;font-weight:600;font-size:13px;letter-spacing:.22em;text-transform:uppercase;opacity:.9}
+
+h2{margin:0;font-weight:900;font-size:clamp(30px,9vw,40px);letter-spacing:.06em;text-transform:uppercase;line-height:1;
+  color:var(--white);text-shadow:3px 3px 0 var(--navy)}
+h3{margin:0;font-weight:800;font-size:16px;letter-spacing:.08em;text-transform:uppercase;color:var(--navy)}
+.card{background:var(--soft);border:1px solid var(--line);border-radius:20px;padding:16px 12px;display:flex;flex-direction:column;gap:14px;
+  -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+.sec{display:flex;flex-direction:column;gap:14px}
+.sec-head{display:flex;justify-content:center}
+
+/* Sabores de hoy */
+.today{background:var(--white);color:var(--ink);border-radius:22px;padding:18px 16px 16px;box-shadow:0 12px 30px rgba(13,44,90,.28);display:flex;flex-direction:column;gap:12px}
+.today-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.today h3{font-size:18px}
+.live{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#0b7a3e;background:#ddf6e6;border-radius:999px;padding:4px 10px}
+.live i{width:8px;height:8px;border-radius:50%;background:#16a34a;box-shadow:0 0 0 0 rgba(22,163,74,.6);animation:pulse 1.8s infinite}
+.live.off{color:#7a5a00;background:#fff2c7}.live.off i{background:#d39b00;animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(22,163,74,.55)}70%{box-shadow:0 0 0 8px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
+@media (prefers-reduced-motion:reduce){.live i{animation:none}}
+.flavors:empty{display:none}
+.flavors{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.flavors li{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:15px;padding:8px 13px 8px 10px;border-radius:999px;background:#eef8fc;border:1px solid #cfe9f5}
+.flavors li i{width:14px;height:14px;border-radius:50%;background:var(--c,#0b86c9);box-shadow:inset 0 0 0 2px rgba(255,255,255,.65);flex:none}
+.today .note{margin:0;font-size:13px;color:#4b6584;line-height:1.45}
+.skeleton li{color:transparent;background:#e7f1f6;border-color:#e7f1f6;width:92px}
+.skeleton li:nth-child(2n){width:120px}.skeleton li i{background:#d6e7ef}
+
+/* Tabla de precios */
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:10px 2px;text-align:center}
+thead th{font-weight:800;font-size:12px;letter-spacing:.03em;text-transform:uppercase;color:var(--navy);line-height:1.15}
+tbody th{text-align:left;font-weight:800;font-size:14px;line-height:1.1}
+tbody th small{display:block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;opacity:.85}
+tbody td{font-weight:800;font-size:clamp(15px,4.4vw,19px);white-space:nowrap}
+tbody tr+tr th,tbody tr+tr td{border-top:1px dashed var(--line)}
+
+.prices{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.price{background:var(--white);color:var(--ink);border-radius:16px;padding:12px;text-align:center;display:flex;flex-direction:column;gap:2px}
+.price span{font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#4b6584}
+.price b{font-weight:900;font-size:26px;font-variant-numeric:tabular-nums}
+.price small{font-size:12px;color:#4b6584;font-weight:600}
+.trad{list-style:none;margin:0;padding:0;columns:2;column-gap:14px}
+.trad li{font-weight:600;font-size:14px;letter-spacing:.06em;text-transform:uppercase;padding:5px 0;break-inside:avoid}
+
+.extras{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.extras div{flex:1 1 140px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.extras span{font-weight:800;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--navy)}
+.extras b{font-weight:900;font-size:18px}
+
+/* solo para lectores de pantalla */
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+footer{display:flex;flex-direction:column;gap:6px;text-align:center;font-size:12px;line-height:1.5;color:rgba(255,255,255,.88)}
+footer .upd{font-weight:600}
+footer .credit{margin-top:10px;padding-top:12px;border-top:1px solid var(--line);letter-spacing:.04em}
+footer .credit strong{color:var(--white)}
+</style>
+</head>
+<body>
+<main>
+  <header class="brand">
+    <img src="icon-512.png" alt="Frío Intenso · Granizados y Frappé" width="250" height="250">
+    <p>Granizados y Frappé</p>
+  </header>
+
+  <section class="today" aria-labelledby="h-today">
+    <div class="today-top">
+      <h3 id="h-today">Granizados de hoy</h3>
+      <span class="live" id="live"><i></i><span id="liveTxt">Cargando…</span></span>
+    </div>
+    <ul class="flavors skeleton" id="flavors" aria-busy="true"><li><i></i>Sabor</li><li><i></i>Sabor</li><li><i></i>Sabor</li><li><i></i>Sabor</li><li><i></i>Sabor</li></ul>
+    <p class="note" id="todayNote">Estos son los sabores que hay disponibles ahora mismo.</p>
+  </section>
+
+  <section class="sec" aria-labelledby="h-gran">
+    <div class="sec-head"><h2 id="h-gran">Granizados</h2></div>
+    <div class="card">
+      <table>
+        <thead id="granHead"></thead>
+        <tbody id="granBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="h-frap">
+    <div class="sec-head"><h2 id="h-frap">Frappés</h2></div>
+    <div class="prices" id="frapPrices"></div>
+    <div class="card">
+      <h3>Tradicionales</h3>
+      <ul class="trad" id="trad"></ul>
+    </div>
+  </section>
+
+  <section class="extras" aria-label="Adicionales">
+    <div><span>Topping adicional</span><b id="pTop">$1.000</b></div>
+    <div><span>Jeringa</span><b id="pJer">$2.000</b></div>
+  </section>
+
+  <footer>
+    <span class="upd" id="upd"></span>
+    <span>Precios en pesos colombianos (COP).</span>
+    <span>El exceso de alcohol es perjudicial para la salud. Prohíbase el expendio de bebidas embriagantes a menores de edad. Ley 124 de 1994.</span>
+    <span class="credit">Created by computer engineer <strong>Alejandro Arbelaez</strong></span>
+  </footer>
+</main>
+
+<script>
+/* =====================================================================
+   CARTA PÚBLICA · Frío Intenso
+   - Los sabores de granizado y los precios salen en vivo de la app (Supabase).
+   - Aplica igual a los sabores de frappé.
+   - Para quitar un sabor de la carta: en la app, Productos → el sabor →
+     desmarcar "Mostrar en la caja". Para volver a mostrarlo, marcarlo otra vez.
+   - Lee solo las vistas públicas carta_sabores / carta_precios / carta_lineas
+     (ver supabase-actualizacion-5.sql). Nunca toca ventas, costos ni caja.
+   ===================================================================== */
+const SUPABASE_URL = 'https://cahebvlgqgasavbulyli.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Hy2q_Vy0jFNDnRsgvynFqA_jDE9ilfo';
+
+// Lo que no cambia día a día (de la carta impresa)
+// (si la app tiene frappés activos, se usan los de la app)
+const FRAPPES_TRADICIONALES = ['Coco café','Frutos rojos','Lulo','Maracumango','Hierbabuena','Mango biche','Tamarindo','Cereza','Piña colada',
+  'Sandía','Fresa quipitos','Coco','Mora','Fresa','Guanábana','Guayaba','Maracucoco','Piña','Maracuyá','Mandarina','Mango'];
+// Precios de respaldo por si no hay conexión
+const RESPALDO = {
+  granizado: [
+    {oz:8, nombre:'Tropical', precio:8000}, {oz:12, nombre:'Tropical', precio:13000}, {oz:16, nombre:'Tropical', precio:16000},
+    {oz:8, nombre:'Cremoso', precio:13000}, {oz:12, nombre:'Cremoso', precio:17000}, {oz:16, nombre:'Cremoso', precio:20000},
+    {oz:8, nombre:'Sin licor', precio:7000}, {oz:12, nombre:'Sin licor', precio:12000}, {oz:16, nombre:'Sin licor', precio:14000}
+  ],
+  frappe: [{oz:16, nombre:'Agua', precio:10000}, {oz:16, nombre:'Leche', precio:12000}]
+};
+const RECARGA_MS = 60000;   // revisa cambios cada minuto mientras la carta está abierta
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cop = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-CO');
+const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+const plural = s => { const t = String(s || '').trim(); if (!t || /\s/.test(t) || /s$/i.test(t)) return t; return /[aeiouáéíóú]$/i.test(t) ? t + 's' : t + 'es'; };
+const cap = s => { const t = String(s || '').replace(/\s+/g, ' ').trim(); return t.charAt(0).toLocaleUpperCase('es') + t.slice(1); };
+const colorOk = c => /^#[0-9a-f]{3,8}$/i.test(c || '') ? c : '#0b86c9';
+
+async function leer(vista, orden){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${vista}?select=*${orden ? '&order=' + orden : ''}`, {
+    headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }, cache: 'no-store'
+  });
+  if (!r.ok) throw new Error(vista + ' ' + r.status);
+  return r.json();
+}
+
+// Busca la categoría por nombre ("Granizados") y si no, por su id de siempre
+function idLinea(lineas, patron, porDefecto){
+  const l = (lineas || []).find(x => new RegExp(patron, 'i').test(norm(x.nombre)) || x.id === porDefecto);
+  return l ? l.id : porDefecto;
+}
+
+function pintarGranizados(tams){
+  const tipos = [], ozs = [];
+  tams.forEach(t => { const n = t.nombre || ''; if (!tipos.includes(n)) tipos.push(n); if (!ozs.includes(Number(t.oz))) ozs.push(Number(t.oz)); });
+  ozs.sort((a, b) => a - b);
+  const rango = t => { const n = norm(t); return /tropic|con licor/.test(n) ? 0 : /crem/.test(n) ? 1 : /sin licor/.test(n) ? 2 : 3; };
+  tipos.sort((a, b) => rango(a) - rango(b));
+  const sinTipo = tipos.length === 1 && !tipos[0];
+  $('granHead').innerHTML = '<tr><th scope="col"><span class="sr">Tamaño</span></th>' +
+    tipos.map(t => `<th scope="col">${esc(sinTipo ? 'Precio' : plural(t))}</th>`).join('') + '</tr>';
+  $('granBody').innerHTML = ozs.map(oz => '<tr><th scope="row">' + oz + '<small>onzas</small></th>' + tipos.map(t => {
+    const x = tams.find(y => Number(y.oz) === oz && (y.nombre || '') === t);
+    return '<td>' + (x ? cop(x.precio) : '—') + '</td>';
+  }).join('') + '</tr>').join('');
+}
+
+function pintarFrappes(tams){
+  $('frapPrices').innerHTML = [...tams].sort((a, b) => a.precio - b.precio).map(t =>
+    `<div class="price"><span>${esc(t.nombre || 'Frappé')}</span><b>${cop(t.precio)}</b></div>`).join('');
+}
+
+function pintarSabores(sabores, enVivo){
+  const ul = $('flavors');
+  ul.classList.remove('skeleton'); ul.removeAttribute('aria-busy');
+  if (!enVivo){
+    ul.innerHTML = '';
+    $('live').classList.add('off'); $('liveTxt').textContent = 'Sin conexión';
+    $('todayNote').textContent = 'No pudimos cargar los sabores de hoy. Pregúntale a quien te atiende cuáles hay.';
+    return;
+  }
+  $('live').classList.remove('off'); $('liveTxt').textContent = 'En vivo';
+  if (!sabores.length){
+    ul.innerHTML = '';
+    $('todayNote').textContent = 'Por ahora no hay sabores de granizado disponibles. Pregunta en la barra.';
+    return;
+  }
+  ul.innerHTML = sabores.map(s => `<li style="--c:${colorOk(s.color)}"><i></i>${esc(cap(s.nombre))}</li>`).join('');
+  $('todayNote').textContent = sabores.length === 1 ? 'Este es el sabor disponible ahora mismo.' : `Estos son los ${sabores.length} sabores disponibles ahora mismo.`;
+}
+
+function pintarTradicionales(lista){
+  $('trad').innerHTML = lista.map(s => `<li>${esc(cap(s))}</li>`).join('');
+}
+
+function pintarHora(){
+  const d = new Date();
+  $('upd').textContent = 'Sabores revisados hoy a las ' + d.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
+}
+
+let ultimo = '';
+async function cargar(){
+  try {
+    const [lineas, sabores, precios] = await Promise.all([
+      leer('carta_lineas').catch(() => []), leer('carta_sabores', 'nombre'), leer('carta_precios', 'oz')
+    ]);
+    const gId = idLinea(lineas, '^graniz', 'granizado'), fId = idLinea(lineas, '^frap', 'frappe');
+    const firma = JSON.stringify([sabores, precios, gId, fId]);
+    if (firma !== ultimo){
+      ultimo = firma;
+      const tg = precios.filter(t => t.linea === gId), tf = precios.filter(t => t.linea === fId);
+      pintarGranizados(tg.length ? tg : RESPALDO.granizado);
+      pintarFrappes(tf.length ? tf : RESPALDO.frappe);
+      const sg = sabores.filter(s => s.linea === gId).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+      pintarSabores(sg, true);
+      const sf = sabores.filter(s => s.linea === fId).map(s => s.nombre).sort((a, b) => a.localeCompare(b, 'es'));
+      pintarTradicionales(sf.length ? sf : FRAPPES_TRADICIONALES);
+    }
+    $('live').classList.remove('off'); $('liveTxt').textContent = 'En vivo';
+    pintarHora();
+  } catch (e){
+    console.warn('Carta:', e);
+    if (!ultimo) pintarSabores([], false);
+    else { $('live').classList.add('off'); $('liveTxt').textContent = 'Sin conexión'; }
+  }
+}
+
+pintarTradicionales(FRAPPES_TRADICIONALES);
+pintarGranizados(RESPALDO.granizado);
+pintarFrappes(RESPALDO.frappe);
+cargar();
+setInterval(() => { if (document.visibilityState === 'visible') cargar(); }, RECARGA_MS);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') cargar(); });
+</script>
+</body>
+</html>
